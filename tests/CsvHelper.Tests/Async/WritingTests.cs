@@ -4,6 +4,7 @@
 // https://github.com/JoshClose/CsvHelper
 using Xunit;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace CsvHelper.Tests.Async
 {
-	
+
 	public class WritingTests
 	{
 		[Fact]
@@ -58,6 +59,33 @@ namespace CsvHelper.Tests.Async
 			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
 			{
 				var records = new List<Simple>
+				{
+					new Simple { Id = 1, Name = "one" },
+					new Simple { Id = 2, Name = "two" },
+				};
+				await csv.WriteRecordsAsync(records);
+
+				writer.Flush();
+				stream.Position = 0;
+
+				var expected = new TestStringBuilder(csv.Configuration.NewLine);
+				expected.AppendLine("Id,Name");
+				expected.AppendLine("1,one");
+				expected.AppendLine("2,two");
+
+				Assert.Equal(expected.ToString(), reader.ReadToEnd());
+			}
+		}
+
+		[Fact]
+		public async Task WriteRecordsNonGenericTest()
+		{
+			using (var stream = new MemoryStream())
+			using (var reader = new StreamReader(stream))
+			using (var writer = new StreamWriter(stream))
+			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+			{
+				IEnumerable records = new List<Simple>
 				{
 					new Simple { Id = 1, Name = "one" },
 					new Simple { Id = 2, Name = "two" },
